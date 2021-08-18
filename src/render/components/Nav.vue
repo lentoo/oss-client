@@ -1,52 +1,79 @@
 <template>
-    <div class="nav">
-        <div class="nav-item">
-            <img src="../resources/images/icon-back.png" alt="">
-        </div>
-        <div class="nav-item">
-            <img src="../resources/images/icon-home.png" alt="">
-        </div>
-        <div class="nav-item">
-            <img src="../resources/images/icon-refresh.png" alt="">
-        </div>
-        <div class="nav-item">
-            <img src="../resources/images/icon-add.png" alt="">
-        </div>
+  <div class="nav">
+    <div class="nav-item" @click="$emit('onBack')">
+      <img src="../resources/images/icon-back.png" alt="" />
     </div>
+    <div class="nav-item" @click="$emit('onHome')">
+      <img src="../resources/images/icon-home.png" alt="" />
+    </div>
+    <div class="nav-item">
+      <img src="../resources/images/icon-refresh.png" alt="" />
+    </div>
+    <div class="nav-item">
+      <img src="../resources/images/icon-add.png" alt="" />
+    </div>
+
+    <div class="nav-navigation">
+      <input
+        type="text"
+        placeholder="路径、默认为根目录"
+        disabled
+        :value="value"
+      />
+    </div>
+  </div>
 </template>
 <script lang="ts">
 import { defineComponent } from "@vue/runtime-core";
 
 export default defineComponent({
-    name: 'nav'
-})
+  name: "nav",
+  props: {
+    value: {
+      type: String,
+      default: "",
+    },
+  },
+});
 </script>
 <style lang="scss">
 .nav {
-    color: #fff;
-    background-color: #1a7380;
+  color: #fff;
+  background-color: #1a7380;
+  display: flex;
+  padding: 6px 15px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  &-item {
+    background-color: #fff;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
     display: flex;
-    padding: 6px 15px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;    
-    &-item {
-        background-color: #fff;
-        border-radius: 4px;
-        width: 26px;
-        height: 26px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 12px;
-        &:active {
-            background-color: #eee;
-        }
-        img {
-            width: 18px;
-            height: 18px;
-        }
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    &:active {
+      background-color: #eee;
     }
+    img {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &-navigation {
+    background-color: #fff;
+    color: #566;
+    border-radius: 4px;
+    padding: 0px 10px;
+    flex: 1;
+    input {
+      border: 0;
+      outline: none;
+    }
+  }
 }
 </style>
