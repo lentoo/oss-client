@@ -42,12 +42,14 @@ export default defineComponent({
   font-size: 16px;
   cursor: pointer;
   border-bottom: 1px solid #e5e5e5;
+  user-select: none;
   .file-icon {
     height: 24px;
     width: 24px;
     margin-right: 10px;
   }
   p {
+    margin-bottom: 0;
     &:hover {
       text-decoration: underline;
       user-select: none;

@@ -12,13 +12,30 @@
     <div class="nav-item">
       <img src="../resources/images/icon-add.png" alt="" />
     </div>
-
+    <a-select
+      :value="'test'"
+      size="small"
+      :style="{ height: '26px', marginRight: '16px', width: '80px' }"
+    >
+      <a-select-option value="test">内网</a-select-option>
+      <a-select-option value="prod">正式</a-select-option>
+    </a-select>
+    <a-space></a-space>
     <div class="nav-navigation">
-      <input
+      <!-- <input
         type="text"
         placeholder="路径、默认为根目录"
         disabled
         :value="value"
+      /> -->
+      <a-input
+        disabled
+        v-model:value="value"
+        placeholder="路径、默认为根目录"
+        size="small"
+        :style="{
+          height: '100%',
+        }"
       />
     </div>
   </div>
@@ -41,16 +58,16 @@ export default defineComponent({
   color: #fff;
   background-color: #1a7380;
   display: flex;
-  padding: 6px 15px;
+  padding: 5px 15px;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   &-item {
     background-color: #fff;
-    border-radius: 4px;
-    width: 26px;
-    height: 26px;
+    border-radius: 2px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -66,9 +83,9 @@ export default defineComponent({
 
   &-navigation {
     background-color: #fff;
-    color: #566;
-    border-radius: 4px;
-    padding: 0px 10px;
+    // color: #566;
+    // border-radius: 4px;
+    // padding: 0px 10px;
     flex: 1;
     input {
       border: 0;

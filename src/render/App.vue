@@ -6,6 +6,7 @@
     :class="{
       'is-dragover': isDragover,
     }"
+    class="page"
   >
     <NavComponent @onBack="onBack" @onHome="onHome" :value="dirPath" />
     <div class="file-list">
@@ -17,6 +18,10 @@
         @click="handleClick(file)"
       />
     </div>
+
+    <div class="upload-card">
+      <UploadQueue v-model:queue="filesQueue" />
+    </div>
   </main>
 </template>
 
@@ -25,14 +30,24 @@ import { computed, defineComponent, ref, toRaw, watch } from "vue";
 
 import Nav from "./components/Nav.vue";
 import FileItem from "./components/FileItem.vue";
+import UploadQueue from "./components/UploadQueue.vue";
+
+type FileStatus = "waiting" | "processing" | "success";
+interface IAddFileStatus {
+  status: FileStatus;
+  file: File;
+  key: string;
+}
 
 export default defineComponent({
   name: "App",
   components: {
     NavComponent: Nav,
     FileItem,
+    UploadQueue,
   },
   setup() {
+    const filesQueue = ref<IAddFileStatus[]>([]);
     const onDrop = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -40,9 +55,19 @@ export default defineComponent({
       isDragover.value = false;
       const files = e.dataTransfer?.files || [];
       if (files.length) {
-        new Array(files).map((file) => {
-          console.log(file);
-        });
+        const fileArray = Array.from(files).map((file) => {
+          return {
+            file,
+            status: "waiting",
+            key: Date.now() + (Math.random() * 100).toFixed(0),
+          };
+        }) as IAddFileStatus[];
+        console.log(fileArray);
+        console.log(filesQueue.value);
+
+        filesQueue.value = [...fileArray, ...filesQueue.value];
+
+        console.log(filesQueue.value);
       }
     };
     const onDragLeave = (e: DragEvent) => {
@@ -60,43 +85,43 @@ export default defineComponent({
 
     const isDragover = ref(false);
 
-    const fileDatas = {
-      id: 0,
-      isDir: true,
-      name: "/",
-      files: [
-        {
-          id: 1,
-          isDir: true,
-          name: "app",
-          files: [
-            {
-              id: 3,
-              isDir: true,
-              name: "lalala",
-              files: [
-                {
-                  id: 4,
-                  isDir: false,
-                  name: "aaa.png",
-                },
-              ],
-            },
-            {
-              id: 2,
-              isDir: false,
-              name: "logo.png",
-            },
-          ],
-        },
-      ],
-    };
+    const fileDatas = [
+      {
+        id: 1,
+        isDir: true,
+        name: "app",
+        files: [
+          {
+            id: 3,
+            isDir: true,
+            name: "lalala",
+            files: [
+              {
+                id: 4,
+                isDir: false,
+                name: "aaa.png",
+              },
+            ],
+          },
+          {
+            id: 2,
+            isDir: false,
+            name: "logo.png",
+          },
+        ],
+      },
+      {
+        id: 21,
+        isDir: false,
+        name: "test.png",
+      },
+    ];
 
-    let currentDir = ref(fileDatas);
+    let currentDir = ref();
 
-    const files = ref(currentDir.value.files);
+    const files = ref(fileDatas);
     const queue = ref<any[]>([]);
-    queue.value.push(currentDir.value);
+
     const dirPath = ref("");
     const handleClick = (file: any) => {
       if (file.isDir) {
@@ -108,13 +133,9 @@ export default defineComponent({
 
     watch([queue.value], () => {
       console.log("watch");
-
       let cpath = "";
-      queue.value.forEach((item, index) => {
-        cpath = cpath + item.name;
-        if (index !== 0 && index !== queue.value.length - 1) {
-          cpath += "/";
-        }
+      queue.value.forEach((item) => {
+        cpath = cpath + item.name + "/";
       });
       dirPath.value = cpath;
     });
@@ -123,15 +144,20 @@ export default defineComponent({
       if (queue.value.length > 0) {
         queue.value.pop();
         const file = queue.value[queue.value.length - 1];
-        currentDir.value = file;
-        files.value = file.files;
+        if (file) {
+          currentDir.value = file;
+          files.value = file.files;
+        } else {
+          files.value = fileDatas;
+        }
       }
     };
     const onHome = () => {
-      // queue.value = [queue.value[0]];
-      // const file = queue.value[queue.value.length - 1];
-      // currentDir.value = file;
-      // files.value = file.files;
+      while (queue.value.length) {
+        queue.value.pop();
+      }
+      currentDir.value = null;
+      files.value = fileDatas;
     };
 
     return {
@@ -144,6 +170,7 @@ export default defineComponent({
       dirPath,
       isDragover,
       files,
+      filesQueue,
     };
   },
 });
@@ -161,10 +188,21 @@ body {
 img {
   vertical-align: middle;
 }
+.page {
+  min-height: 100vh;
+}
 .file-list {
   padding-top: 40px;
 }
 .is-dragover {
   background-color: rgba(32, 159, 255, 0.1);
+}
+
+.upload-card {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  width: 50%;
+  height: 60%;
 }
 </style>

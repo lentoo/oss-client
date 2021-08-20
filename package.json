@@ -10,6 +10,8 @@
     "dist": "cross-env NODE_ENV=production && electron-builder build --arm64 --mac"
   },
   "dependencies": {
+    "@ant-design/icons-vue": "^6.0.1",
+    "ant-design-vue": "^2.2.6",
     "vue": "^3.0.5"
   },
   "devDependencies": {
@@ -59,5 +61,4 @@
       "allowToChangeInstallationDirectory": true
     }
   }
-  
 }
