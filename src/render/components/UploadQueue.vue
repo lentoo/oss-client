@@ -136,7 +136,7 @@ export default defineComponent({
   width: 50%;
   height: 60%;
 }
-.upload-card >>> .ant-card-body {
+.upload-card :deep() .ant-card-body {
   height: 87%;
 }
 .upload-list {

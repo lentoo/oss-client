@@ -8,29 +8,57 @@
     }"
     class="page"
   >
-    <NavComponent @onBack="onBack" @onHome="onHome" :value="dirPath" />
-    <div class="file-list">
+    <NavComponent
+      @onBack="onBack"
+      @onHome="onHome"
+      :value="dirPath"
+      @onRefresh="onRefresh"
+      @onAddFolder="onAddFolder"
+    />
+    <div class="file-list" v-if="files.length">
       <FileItem
         v-for="file in files"
-        :key="file.id"
-        :filename="file.name"
+        :key="file._id"
+        :filename="file.filename"
         :is-dir="file.isDir"
         @click="handleClick(file)"
+        @contextmenu="onContextMenu($event, file)"
       />
+    </div>
+    <div class="empty-img" v-else>
+      <img src="./resources/images/empty.png" alt="" />
+      <p>空空如也~~</p>
     </div>
 
     <div class="upload-card">
       <UploadQueue v-model:queue="filesQueue" />
     </div>
+
+    <a-modal
+      title="新建文件夹"
+      v-model:visible="visible"
+      :confirm-loading="confirmLoading"
+      @ok="handleOk"
+    >
+      <p>
+        <a-input v-model:value="folderValue" placeholder="请输入文件夹名称" />
+      </p>
+    </a-modal>
+
+    <context-menu v-model:show="menuShow" :options="menuOptions" />
   </main>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, toRaw, watch } from "vue";
+import { computed, defineComponent, onMounted, ref, toRaw, watch } from "vue";
+import { notification } from "ant-design-vue";
 
 import Nav from "./components/Nav.vue";
 import FileItem from "./components/FileItem.vue";
 import UploadQueue from "./components/UploadQueue.vue";
+
+import { getFileList, addDirectory, deleteFile } from "./api";
+import type { IFile } from "../types";
 
 type FileStatus = "waiting" | "processing" | "success";
 interface IAddFileStatus {
@@ -85,37 +113,25 @@ export default defineComponent({
 
     const isDragover = ref(false);
 
-    const fileDatas = [
-      {
-        id: 1,
-        isDir: true,
-        name: "app",
-        files: [
-          {
-            id: 3,
-            isDir: true,
-            name: "lalala",
-            files: [
-              {
-                id: 4,
-                isDir: false,
-                name: "aaa.png",
-              },
-            ],
-          },
-          {
-            id: 2,
-            isDir: false,
-            name: "logo.png",
-          },
-        ],
-      },
-      {
-        id: 21,
-        isDir: false,
-        name: "test.png",
-      },
-    ];
+    let fileDatas: IFile[] = [];
+
+    const parent_id = ref("");
+    const queue_parent_ids = ref<string[]>([]);
+    const env = ref("dev");
+
+    const getFileListById = async () => {
+      const result = await getFileList({
+        parent_id: parent_id.value,
+        env: env.value,
+      });
+
+      fileDatas = result.data;
+
+      files.value = fileDatas;
+    };
+    onMounted(async () => {
+      getFileListById();
+    });
 
     let currentDir = ref();
 
@@ -123,11 +139,18 @@ export default defineComponent({
     const queue = ref<any[]>([]);
 
     const dirPath = ref("");
-    const handleClick = (file: any) => {
+    const handleClick = (file: IFile) => {
+      file = toRaw(file);
+      console.log(file);
+
       if (file.isDir) {
-        currentDir.value = file;
-        files.value = file.files;
+        queue_parent_ids.value.push(parent_id.value);
+        // currentDir.value = file;
         queue.value.push(file);
+        parent_id.value = file._id;
+        getFileListById();
+        // files.value = file.files;
+      } else {
       }
     };
 
@@ -135,20 +158,24 @@ export default defineComponent({
       console.log("watch");
       let cpath = "";
       queue.value.forEach((item) => {
-        cpath = cpath + item.name + "/";
+        cpath = cpath + item.filename + "/";
       });
       dirPath.value = cpath;
     });
 
     const onBack = () => {
-      if (queue.value.length > 0) {
+      if (queue_parent_ids.value.length > 0) {
+        const last_paent_id = queue_parent_ids.value.pop();
         queue.value.pop();
-        const file = queue.value[queue.value.length - 1];
-        if (file) {
-          currentDir.value = file;
-          files.value = file.files;
+        if (last_paent_id) {
+          // currentDir.value = file;
+          parent_id.value = last_paent_id;
+          // files.value = file.files;
+          getFileListById();
         } else {
-          files.value = fileDatas;
+          parent_id.value = "";
+          getFileListById();
+          // files.value = fileDatas;
         }
       }
     };
@@ -156,9 +183,84 @@ export default defineComponent({
       while (queue.value.length) {
         queue.value.pop();
       }
-      currentDir.value = null;
-      files.value = fileDatas;
+      queue_parent_ids.value = [];
+      parent_id.value = "";
+      getFileListById();
+      // currentDir.value = null;
+      // files.value = fileDatas;
     };
+
+    const onRefresh = () => {
+      getFileListById();
+    };
+
+    const visible = ref(false);
+    const confirmLoading = ref(false);
+    const folderValue = ref("");
+    const handleOk = async () => {
+      if (folderValue.value) {
+        confirmLoading.value = true;
+        const result = await addDirectory({
+          filename: folderValue.value,
+          env: env.value,
+          parent_id: parent_id.value,
+        });
+        confirmLoading.value = false;
+        if (result.code === 0) {
+          visible.value = false;
+          getFileListById();
+        } else {
+          notification.error(result.message);
+        }
+      }
+    };
+    const onAddFolder = () => {
+      visible.value = true;
+    };
+    const reqeustDeleteFile = async (_id: string) => {
+      const response = await deleteFile({
+        _id,
+      });
+      if (response.code === 0) {
+        getFileListById();
+      } else {
+        notification.error(response.message);
+      }
+    };
+
+    let contextFile: IFile | null = null;
+    const onContextMenu = (event: MouseEvent, file: IFile) => {
+      event.preventDefault();
+      menuShow.value = true;
+      menuOptions.value.x = event.x;
+      menuOptions.value.y = event.y;
+      contextFile = file;
+    };
+    const menuOptions = ref({
+      items: [
+        {
+          label: "删除",
+          onClick: () => {
+            if (contextFile) {
+              reqeustDeleteFile(contextFile._id);
+            }
+          },
+        },
+        // { label: "Paste", disabled: true },
+        {
+          label: "重命名",
+          onClick: () => {
+            document.execCommand("print");
+          },
+        },
+      ],
+      iconFontClass: "iconfont",
+      customClass: "class-a",
+      minWidth: 120,
+      x: 0,
+      y: 0,
+    });
+    const menuShow = ref(false);
 
     return {
       onDrop,
@@ -167,10 +269,21 @@ export default defineComponent({
       handleClick,
       onBack,
       onHome,
+      onRefresh,
+      onAddFolder,
       dirPath,
       isDragover,
       files,
       filesQueue,
+
+      visible,
+      confirmLoading,
+      handleOk,
+      folderValue,
+
+      onContextMenu,
+      menuOptions,
+      menuShow,
     };
   },
 });
@@ -204,5 +317,20 @@ img {
   bottom: 10px;
   width: 50%;
   height: 60%;
+}
+.empty-img {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.empty-img p {
+  color: #666;
+  font-size: 14px;
+}
+.mx-context-menu-item {
+  padding: 6px 0 !important;
 }
 </style>

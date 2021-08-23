@@ -6,10 +6,10 @@
     <div class="nav-item" @click="$emit('onHome')">
       <img src="../resources/images/icon-home.png" alt="" />
     </div>
-    <div class="nav-item">
+    <div class="nav-item" @click="$emit('onRefresh')">
       <img src="../resources/images/icon-refresh.png" alt="" />
     </div>
-    <div class="nav-item">
+    <div class="nav-item" @click="$emit('onAddFolder')">
       <img src="../resources/images/icon-add.png" alt="" />
     </div>
     <a-select
@@ -30,6 +30,7 @@
       /> -->
       <a-input
         disabled
+        :maskClosable="false"
         v-model:value="value"
         placeholder="路径、默认为根目录"
         size="small"
@@ -41,7 +42,7 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent } from "@vue/runtime-core";
+import { defineComponent, ref } from "@vue/runtime-core";
 
 export default defineComponent({
   name: "nav",
