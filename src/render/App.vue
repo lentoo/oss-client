@@ -21,7 +21,10 @@
         :key="file._id"
         :filename="file.filename"
         :is-dir="file.isDir"
+        :editing="file.editing"
         @click="handleClick(file)"
+        @rename="handleFileRename"
+        @cancel-rename="handleCancelRename"
         @contextmenu="onContextMenu($event, file)"
       />
     </div>
@@ -57,7 +60,7 @@ import Nav from "./components/Nav.vue";
 import FileItem from "./components/FileItem.vue";
 import UploadQueue from "./components/UploadQueue.vue";
 
-import { getFileList, addDirectory, deleteFile } from "./api";
+import { getFileList, addDirectory, deleteFile, renameFile } from "./api";
 import type { IFile } from "../types";
 
 type FileStatus = "waiting" | "processing" | "success";
@@ -133,8 +136,6 @@ export default defineComponent({
       getFileListById();
     });
 
-    let currentDir = ref();
-
     const files = ref(fileDatas);
     const queue = ref<any[]>([]);
 
@@ -145,11 +146,9 @@ export default defineComponent({
 
       if (file.isDir) {
         queue_parent_ids.value.push(parent_id.value);
-        // currentDir.value = file;
         queue.value.push(file);
         parent_id.value = file._id;
         getFileListById();
-        // files.value = file.files;
       } else {
       }
     };
@@ -183,6 +182,7 @@ export default defineComponent({
       while (queue.value.length) {
         queue.value.pop();
       }
+      // queue.value = [];
       queue_parent_ids.value = [];
       parent_id.value = "";
       getFileListById();
@@ -217,6 +217,7 @@ export default defineComponent({
     const onAddFolder = () => {
       visible.value = true;
     };
+
     const reqeustDeleteFile = async (_id: string) => {
       const response = await deleteFile({
         _id,
@@ -224,7 +225,9 @@ export default defineComponent({
       if (response.code === 0) {
         getFileListById();
       } else {
-        notification.error(response.message);
+        notification.error({
+          message: response.message,
+        });
       }
     };
 
@@ -236,6 +239,7 @@ export default defineComponent({
       menuOptions.value.y = event.y;
       contextFile = file;
     };
+
     const menuOptions = ref({
       items: [
         {
@@ -250,7 +254,12 @@ export default defineComponent({
         {
           label: "重命名",
           onClick: () => {
-            document.execCommand("print");
+            files.value.forEach((item) => {
+              item.editing = false;
+            });
+            if (contextFile) {
+              contextFile.editing = true;
+            }
           },
         },
       ],
@@ -261,7 +270,29 @@ export default defineComponent({
       y: 0,
     });
     const menuShow = ref(false);
+    const handleFileRename = async (newFileName: string) => {
+      if (contextFile) {
+        const result = await renameFile(
+          contextFile._id,
+          newFileName,
+          contextFile.parent_id
+        );
+        console.log(result);
 
+        if (result.code === 0) {
+          getFileListById();
+        } else {
+          notification.error({
+            message: result.message,
+          });
+        }
+      }
+    };
+    const handleCancelRename = () => {
+      if (contextFile) {
+        contextFile.editing = false;
+      }
+    };
     return {
       onDrop,
       onDragOver,
@@ -284,6 +315,8 @@ export default defineComponent({
       onContextMenu,
       menuOptions,
       menuShow,
+      handleFileRename,
+      handleCancelRename,
     };
   },
 });

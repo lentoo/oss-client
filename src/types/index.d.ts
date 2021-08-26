@@ -13,4 +13,6 @@ export interface IFile {
   file_key: string;
 
   parent_id: string;
+
+  editing?: boolean;
 }

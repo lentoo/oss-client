@@ -14,3 +14,15 @@ export function deleteFile(args: any): any {
     params: args,
   });
 }
+
+export function renameFile(
+  file_id: string,
+  filename: string,
+  parent_id: string
+): any {
+  return request.post("/api/file/rename", {
+    _id: file_id,
+    filename,
+    parent_id,
+  });
+}
