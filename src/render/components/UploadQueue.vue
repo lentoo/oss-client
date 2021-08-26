@@ -1,5 +1,10 @@
 <template>
-  <a-card title="上传列表" :style="{ height: '100%' }" v-show="visible">
+  <a-card
+    hoverable
+    title="上传列表"
+    :style="{ height: '100%' }"
+    v-show="visible"
+  >
     <template #extra>
       <CloseOutlined :style="{ cursor: 'pointer' }" @click="onClose" />
     </template>
@@ -29,22 +34,15 @@
   </a-card>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  ref,
-  toRaw,
-  watch,
-  PropType,
-  watchEffect,
-  effect,
-} from "vue";
+import { defineComponent, ref, PropType, watchEffect } from "vue";
 import {
   CloseOutlined,
   SyncOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons-vue";
+
+import { handleUpload as requestUpload } from "../api";
 
 type FileStatus = "waiting" | "processing" | "success";
 interface IAddFileStatus {
@@ -54,6 +52,7 @@ interface IAddFileStatus {
 }
 export default defineComponent({
   name: "App",
+  emits: ["success"],
   components: {
     CloseOutlined,
     SyncOutlined,
@@ -70,7 +69,7 @@ export default defineComponent({
       default: 4,
     },
   },
-  setup(props) {
+  setup(props, context) {
     const visible = ref(false);
     const onClose = () => {
       visible.value = false;
@@ -79,14 +78,22 @@ export default defineComponent({
     const handleUpload = (file: IAddFileStatus) => {
       console.log(file.file.name, " 上传中");
       file.status = "processing";
-      setTimeout(() => {
+      const filename = file.file.name;
+      const mimetype = file.file.type;
+      requestUpload(file.file).then((result) => {
         file.status = "success";
+        const emitArgs = {
+          ...result,
+          filename,
+          mimetype,
+        };
         console.log(file.file.name, " 上传完成");
-        processingQueue.value = processingQueue.value.filter(
-          (item) => item.key !== file.key
-        );
-        checkUploadQueue();
-      }, 2000);
+        context.emit("success", emitArgs);
+      });
+      processingQueue.value = processingQueue.value.filter(
+        (item) => item.key !== file.key
+      );
+      checkUploadQueue();
     };
 
     const checkUploadQueue = () => {
@@ -127,7 +134,11 @@ export default defineComponent({
   },
 });
 </script>
-
+<style>
+.upload-card .ant-card-body {
+  height: 87%;
+}
+</style>
 <style scoped>
 .upload-card {
   position: fixed;
@@ -135,9 +146,6 @@ export default defineComponent({
   bottom: 10px;
   width: 50%;
   height: 60%;
-}
-.upload-card :deep() .ant-card-body {
-  height: 87%;
 }
 .upload-list {
   height: 100%;

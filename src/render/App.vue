@@ -34,7 +34,7 @@
     </div>
 
     <div class="upload-card">
-      <UploadQueue v-model:queue="filesQueue" />
+      <UploadQueue v-model:queue="filesQueue" @success="uploadSuccess" />
     </div>
 
     <a-modal
@@ -49,6 +49,16 @@
     </a-modal>
 
     <context-menu v-model:show="menuShow" :options="menuOptions" />
+
+    <a-modal v-model:visible="modalVisible" width="80%">
+      <div style="text-align: center">
+        <img
+          style="max-width: 100%; max-height: 50vh"
+          :src="modalImageUrl"
+          alt=""
+        />
+      </div>
+    </a-modal>
   </main>
 </template>
 
@@ -60,7 +70,13 @@ import Nav from "./components/Nav.vue";
 import FileItem from "./components/FileItem.vue";
 import UploadQueue from "./components/UploadQueue.vue";
 
-import { getFileList, addDirectory, deleteFile, renameFile } from "./api";
+import {
+  getFileList,
+  addDirectory,
+  deleteFile,
+  renameFile,
+  addFile,
+} from "./api";
 import type { IFile } from "../types";
 
 type FileStatus = "waiting" | "processing" | "success";
@@ -140,6 +156,8 @@ export default defineComponent({
     const queue = ref<any[]>([]);
 
     const dirPath = ref("");
+    const modalVisible = ref(false);
+    const modalImageUrl = ref("");
     const handleClick = (file: IFile) => {
       file = toRaw(file);
       console.log(file);
@@ -147,9 +165,11 @@ export default defineComponent({
       if (file.isDir) {
         queue_parent_ids.value.push(parent_id.value);
         queue.value.push(file);
-        parent_id.value = file._id;
+        parent_id.value = file._id!;
         getFileListById();
       } else {
+        modalVisible.value = true;
+        modalImageUrl.value = file.cstore_url;
       }
     };
 
@@ -246,7 +266,7 @@ export default defineComponent({
           label: "删除",
           onClick: () => {
             if (contextFile) {
-              reqeustDeleteFile(contextFile._id);
+              reqeustDeleteFile(contextFile._id!);
             }
           },
         },
@@ -293,7 +313,32 @@ export default defineComponent({
         contextFile.editing = false;
       }
     };
+    const uploadSuccess = (result: {
+      downloadUrl: string;
+      fileKey: string;
+      fileSize: number;
+      filename: string;
+      mimetype: string;
+    }) => {
+      const { downloadUrl, fileKey, filename, mimetype, fileSize } = result;
+      addFile({
+        parent_id: parent_id.value,
+        filename,
+        mimetype,
+        env: "dev",
+        cstore_url: downloadUrl,
+        file_key: fileKey,
+        file_size: fileSize,
+        isDir: false,
+      }).then((result) => {
+        if (result.code === 0) {
+          getFileListById();
+        }
+      });
+    };
     return {
+      modalImageUrl,
+      modalVisible,
       onDrop,
       onDragOver,
       onDragLeave,
@@ -317,6 +362,7 @@ export default defineComponent({
       menuShow,
       handleFileRename,
       handleCancelRename,
+      uploadSuccess,
     };
   },
 });
