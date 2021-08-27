@@ -12,14 +12,14 @@
       @onBack="onBack"
       @onHome="onHome"
       :value="dirPath"
-      :env="env"
+      :env="state.env"
       @onRefresh="onRefresh"
       @onAddFolder="onAddFolder"
       @env-change="onEnvChange"
     />
-    <div class="file-list" v-if="files.length">
+    <div class="file-list" v-if="state.files.length">
       <FileItem
-        v-for="file in files"
+        v-for="file in state.files"
         :key="file._id"
         :filename="file.filename"
         :is-dir="file.isDir"
@@ -72,7 +72,16 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, ref, toRaw, watch } from "vue";
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+  toRaw,
+  watch,
+  reactive,
+  watchEffect,
+} from "vue";
 import { notification } from "ant-design-vue";
 import { copyText } from "vue3-clipboard";
 
@@ -105,6 +114,7 @@ export default defineComponent({
   },
   setup() {
     const filesQueue = ref<IAddFileStatus[]>([]);
+    const isDragover = ref(false);
     const onDrop = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -127,6 +137,7 @@ export default defineComponent({
         console.log(filesQueue.value);
       }
     };
+
     const onDragLeave = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -140,30 +151,36 @@ export default defineComponent({
       isDragover.value = true;
     };
 
-    const isDragover = ref(false);
-
     let fileDatas: IFile[] = [];
 
     const parent_id = ref("");
     const queue_parent_ids = ref<string[]>([]);
-    const env = ref(localStorage.getItem("env") || "test");
+    // const env = ref(localStorage.getItem("env") || "test");
 
     const getFileListById = async () => {
       const result = await getFileList({
         parent_id: parent_id.value,
-        env: env.value,
+        env: state.env,
       });
 
       fileDatas = result.data;
 
-      files.value = fileDatas;
+      state.files = fileDatas;
     };
     onMounted(async () => {
       getFileListById();
     });
 
-    const files = ref(fileDatas);
-    const queue = ref<any[]>([]);
+    // const files = ref(fileDatas);
+    let state = reactive<{
+      queue: IFile[];
+      env: string;
+      files: IFile[];
+    }>({
+      queue: [],
+      env: localStorage.getItem("env") || "test",
+      files: [],
+    });
 
     const dirPath = ref("");
     const modalVisible = ref(false);
@@ -173,7 +190,8 @@ export default defineComponent({
       console.log(file);
       if (file.isDir) {
         queue_parent_ids.value.push(parent_id.value);
-        queue.value.push(file);
+        // queue.value.push(file);
+        state.queue.push(file);
         parent_id.value = file._id!;
         getFileListById();
       } else {
@@ -196,10 +214,10 @@ export default defineComponent({
       });
     };
 
-    watch([queue.value], () => {
+    watchEffect(() => {
       console.log("watch");
       let cpath = "";
-      queue.value.forEach((item) => {
+      state.queue.forEach((item) => {
         cpath = cpath + item.filename + "/";
       });
       dirPath.value = cpath;
@@ -208,7 +226,7 @@ export default defineComponent({
     const onBack = () => {
       if (queue_parent_ids.value.length > 0) {
         const last_paent_id = queue_parent_ids.value.pop();
-        queue.value.pop();
+        state.queue.pop();
         if (last_paent_id) {
           // currentDir.value = file;
           parent_id.value = last_paent_id;
@@ -222,19 +240,14 @@ export default defineComponent({
       }
     };
     const onHome = () => {
-      while (queue.value.length) {
-        queue.value.pop();
-      }
-      // queue.value = [];
+      state.queue = [];
       queue_parent_ids.value = [];
       parent_id.value = "";
       getFileListById();
-      // currentDir.value = null;
-      // files.value = fileDatas;
     };
 
     const onEnvChange = (newenv: string) => {
-      env.value = newenv;
+      state.env = newenv;
       onHome();
     };
 
@@ -250,7 +263,7 @@ export default defineComponent({
         confirmLoading.value = true;
         const result = await addDirectory({
           filename: folderValue.value,
-          env: env.value,
+          env: state.env,
           parent_id: parent_id.value,
         });
         confirmLoading.value = false;
@@ -306,7 +319,7 @@ export default defineComponent({
         {
           label: "重命名",
           onClick: () => {
-            files.value.forEach((item) => {
+            state.files.forEach((item) => {
               item.editing = false;
             });
             if (contextFile) {
@@ -357,7 +370,7 @@ export default defineComponent({
         parent_id: parent_id.value,
         filename,
         mimetype,
-        env: env.value,
+        env: state.env,
         cstore_url: downloadUrl,
         file_key: fileKey,
         file_size: fileSize,
@@ -381,10 +394,9 @@ export default defineComponent({
       onRefresh,
       onAddFolder,
       onEnvChange,
-      env,
+      state,
       dirPath,
       isDragover,
-      files,
       filesQueue,
 
       visible,

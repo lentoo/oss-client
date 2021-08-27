@@ -52,7 +52,7 @@ interface IAddFileStatus {
 }
 export default defineComponent({
   name: "App",
-  emits: ["success"],
+  emits: ["success", "value"],
   components: {
     CloseOutlined,
     SyncOutlined,
@@ -73,6 +73,10 @@ export default defineComponent({
     const visible = ref(false);
     const onClose = () => {
       visible.value = false;
+      context.emit(
+        "value",
+        props.queue.filter((item) => item.status === "waiting")
+      );
     };
     const processingQueue = ref<IAddFileStatus[]>([]);
     const handleUpload = (file: IAddFileStatus) => {
