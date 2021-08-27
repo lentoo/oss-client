@@ -1,6 +1,5 @@
 import request from "../../utils/request";
 import { IFile } from "../../types";
-import type { AxiosResponse } from "axios";
 export function getFileList(args: any) {
   return request.get("/api/file/list", {
     params: args,

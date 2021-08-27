@@ -7,14 +7,15 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "serve": "vite preview",
-    "dist": "cross-env NODE_ENV=production && electron-builder build --arm64 --mac"
+    "dist": "cross-env NODE_ENV=production electron-builder build --arm64 --mac"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.0.1",
     "@imengyu/vue3-context-menu": "^1.0.8",
     "ant-design-vue": "^2.2.6",
     "axios": "^0.21.1",
-    "vue": "^3.0.5"
+    "vue": "^3.0.5",
+    "vue3-clipboard": "^1.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^1.3.0",
@@ -36,6 +37,7 @@
     "directories": {
       "output": "app-builds"
     },
+    "asar": false,
     "mac": {
       "target": {
         "target": "dir",
@@ -57,10 +59,7 @@
       "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
       "!**/{appveyor.yml,.travis.yml,circle.yml}",
       "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
-    ],
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+    ]
+    
   }
 }

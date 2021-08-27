@@ -14,7 +14,7 @@ function createWindow() {
     },
   });
   if (IS_PROD) {
-    win.loadFile(`${__dirname}/dist/index.html`);
+    win.loadFile(`./dist/index.html`);
   } else {
     win.loadURL("http://localhost:3001");
     win.webContents.openDevTools();

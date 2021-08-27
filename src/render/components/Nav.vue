@@ -13,9 +13,10 @@
       <img src="../resources/images/icon-add.png" alt="" />
     </div>
     <a-select
-      :value="'test'"
+      v-model:value="envValue"
       size="small"
       :style="{ height: '26px', marginRight: '16px', width: '80px' }"
+      @change="handleChange"
     >
       <a-select-option value="test">内网</a-select-option>
       <a-select-option value="prod">正式</a-select-option>
@@ -42,15 +43,35 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref } from "@vue/runtime-core";
+import { defineComponent, ref, watch } from "@vue/runtime-core";
 
 export default defineComponent({
   name: "nav",
+  emits: ["env-change", "onBack", "onHome", "onRefresh", "onAddFolder"],
   props: {
     value: {
       type: String,
       default: "",
     },
+    env: {
+      type: String,
+      default: "",
+    },
+  },
+  setup(props, context) {
+    const envValue = ref(props.env);
+    const handleChange = (value: string) => {
+      localStorage.setItem("env", value);
+      context.emit("env-change", value);
+    };
+    watch([props.env], () => {
+      console.log("wach env", props.env);
+    });
+
+    return {
+      envValue,
+      handleChange,
+    };
   },
 });
 </script>
@@ -64,6 +85,7 @@ export default defineComponent({
   top: 0;
   left: 0;
   right: 0;
+  user-select: none;
   &-item {
     background-color: #fff;
     border-radius: 2px;

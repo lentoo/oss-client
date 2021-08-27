@@ -12,8 +12,10 @@
       @onBack="onBack"
       @onHome="onHome"
       :value="dirPath"
+      :env="env"
       @onRefresh="onRefresh"
       @onAddFolder="onAddFolder"
+      @env-change="onEnvChange"
     />
     <div class="file-list" v-if="files.length">
       <FileItem
@@ -22,6 +24,7 @@
         :filename="file.filename"
         :is-dir="file.isDir"
         :editing="file.editing"
+        :mimetype="file.mimetype"
         @click="handleClick(file)"
         @rename="handleFileRename"
         @cancel-rename="handleCancelRename"
@@ -42,6 +45,7 @@
       v-model:visible="visible"
       :confirm-loading="confirmLoading"
       @ok="handleOk"
+      @cancel="handleModalCancel"
     >
       <p>
         <a-input v-model:value="folderValue" placeholder="请输入文件夹名称" />
@@ -51,12 +55,17 @@
     <context-menu v-model:show="menuShow" :options="menuOptions" />
 
     <a-modal v-model:visible="modalVisible" width="80%">
-      <div style="text-align: center">
+      <div style="text-align: center; margin-top: 20px">
         <img
           style="max-width: 100%; max-height: 50vh"
           :src="modalImageUrl"
           alt=""
         />
+      </div>
+      <div style="margin-top: 20px">
+        <a-button size="small" type="primary" @click="copyLink(modalImageUrl)"
+          >复制链接</a-button
+        >
       </div>
     </a-modal>
   </main>
@@ -65,6 +74,7 @@
 <script lang="ts">
 import { computed, defineComponent, onMounted, ref, toRaw, watch } from "vue";
 import { notification } from "ant-design-vue";
+import { copyText } from "vue3-clipboard";
 
 import Nav from "./components/Nav.vue";
 import FileItem from "./components/FileItem.vue";
@@ -136,7 +146,7 @@ export default defineComponent({
 
     const parent_id = ref("");
     const queue_parent_ids = ref<string[]>([]);
-    const env = ref("dev");
+    const env = ref(localStorage.getItem("env") || "test");
 
     const getFileListById = async () => {
       const result = await getFileList({
@@ -161,7 +171,6 @@ export default defineComponent({
     const handleClick = (file: IFile) => {
       file = toRaw(file);
       console.log(file);
-
       if (file.isDir) {
         queue_parent_ids.value.push(parent_id.value);
         queue.value.push(file);
@@ -171,6 +180,20 @@ export default defineComponent({
         modalVisible.value = true;
         modalImageUrl.value = file.cstore_url;
       }
+    };
+
+    const copyLink = (link: string) => {
+      copyText(link, undefined, (err: any, event: any) => {
+        if (err) {
+          notification.error({
+            message: "复制失败、请手动复制",
+          });
+        } else {
+          notification.success({
+            message: "复制成功",
+          });
+        }
+      });
     };
 
     watch([queue.value], () => {
@@ -210,6 +233,11 @@ export default defineComponent({
       // files.value = fileDatas;
     };
 
+    const onEnvChange = (newenv: string) => {
+      env.value = newenv;
+      onHome();
+    };
+
     const onRefresh = () => {
       getFileListById();
     };
@@ -227,12 +255,16 @@ export default defineComponent({
         });
         confirmLoading.value = false;
         if (result.code === 0) {
-          visible.value = false;
           getFileListById();
+          handleModalCancel();
         } else {
           notification.error(result.message);
         }
       }
+    };
+    const handleModalCancel = () => {
+      visible.value = false;
+      folderValue.value = "";
     };
     const onAddFolder = () => {
       visible.value = true;
@@ -293,7 +325,7 @@ export default defineComponent({
     const handleFileRename = async (newFileName: string) => {
       if (contextFile) {
         const result = await renameFile(
-          contextFile._id,
+          contextFile._id!,
           newFileName,
           contextFile.parent_id
         );
@@ -325,7 +357,7 @@ export default defineComponent({
         parent_id: parent_id.value,
         filename,
         mimetype,
-        env: "dev",
+        env: env.value,
         cstore_url: downloadUrl,
         file_key: fileKey,
         file_size: fileSize,
@@ -343,10 +375,13 @@ export default defineComponent({
       onDragOver,
       onDragLeave,
       handleClick,
+      copyLink,
       onBack,
       onHome,
       onRefresh,
       onAddFolder,
+      onEnvChange,
+      env,
       dirPath,
       isDragover,
       files,
@@ -355,6 +390,7 @@ export default defineComponent({
       visible,
       confirmLoading,
       handleOk,
+      handleModalCancel,
       folderValue,
 
       onContextMenu,
@@ -411,5 +447,8 @@ img {
 }
 .mx-context-menu-item {
   padding: 6px 0 !important;
+}
+.ant-modal-mask {
+  backdrop-filter: blur(4px);
 }
 </style>

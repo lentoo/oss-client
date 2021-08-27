@@ -109,14 +109,12 @@ export default defineComponent({
         if (fileItem) {
           processingQueue.value.push(fileItem);
         }
+        console.log("待处理队列", processingQueue.value.length);
+        processingQueue.value.map((item) => {
+          handleUpload(item);
+        });
       }
     };
-    watchEffect(() => {
-      console.log("待处理队列", processingQueue.value.length);
-      processingQueue.value.map((item) => {
-        handleUpload(item);
-      });
-    });
 
     watchEffect(() => {
       const waitingFileQueue = props.queue.filter(

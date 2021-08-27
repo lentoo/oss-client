@@ -5,7 +5,7 @@
       v-if="isDir"
       src="../resources/images/icon-folder.png"
     />
-    <img class="file-icon" v-else src="../resources/images/icon-image.png" />
+    <img class="file-icon" v-else :src="mimetypeImage" />
 
     <p v-if="editing" @click.stop="() => {}">
       <a-input
@@ -21,8 +21,12 @@
 </template>
 <script lang="ts">
 import { defineComponent, ref } from "@vue/runtime-core";
-import { notification } from "ant-design-vue";
 
+import IconImage from "../resources/images/icon-image.png";
+import IconUnKnow from "../resources/images/icon-unknow.png";
+import IconMp3 from "../resources/images/icon-mp3.png";
+import IconVideo from "../resources/images/icon-video.png";
+import IconPdf from "../resources/images/icon-pdf.png";
 export default defineComponent({
   name: "file-item",
   emits: ["click", "rename", "cancelRename"],
@@ -38,6 +42,10 @@ export default defineComponent({
     editing: {
       type: Boolean,
       default: false,
+    },
+    mimetype: {
+      type: String,
+      default: "",
     },
   },
   setup(props, context) {
@@ -57,9 +65,26 @@ export default defineComponent({
       }
       context.emit("rename", value.value);
     };
+
+    const mimetypeToImage: any = {
+      "image/png": IconImage,
+      "image/jpg": IconImage,
+      "image/jpeg": IconImage,
+      "image/bmp": IconImage,
+      "image/webp": IconImage,
+      "audio/mpeg": IconMp3,
+      "audio/aac": IconMp3,
+      "audio/weba": IconMp3,
+      "video/mpeg": IconVideo,
+      "video/webm": IconVideo,
+      "video/x-msvideo": IconVideo,
+      "application/pdf": IconPdf,
+    };
+    const mimetypeImage = mimetypeToImage[props.mimetype] || IconUnKnow;
+
     return {
       value,
-
+      mimetypeImage,
       pressEnter,
     };
   },
