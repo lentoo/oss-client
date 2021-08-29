@@ -3,7 +3,7 @@
     <img
       class="file-icon"
       v-if="isDir"
-      src="../resources/images/icon-folder.png"
+      src="../../resources/images/icon-folder.png"
     />
     <img class="file-icon" v-else :src="mimetypeImage" />
 
@@ -17,16 +17,14 @@
       />
     </p>
     <p v-else>{{ filename }}</p>
+
+    <span class="file-size">{{ isDir ? "--" : displayFileSize }}</span>
+    <span class="file-date">{{ fileDate }}</span>
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref } from "@vue/runtime-core";
-
-import IconImage from "../resources/images/icon-image.png";
-import IconUnKnow from "../resources/images/icon-unknow.png";
-import IconMp3 from "../resources/images/icon-mp3.png";
-import IconVideo from "../resources/images/icon-video.png";
-import IconPdf from "../resources/images/icon-pdf.png";
+import { computed, defineComponent, ref } from "vue";
+import { mimetypeToImage, converFileDate, converFileSize } from "./index";
 export default defineComponent({
   name: "file-item",
   emits: ["click", "rename", "cancelRename"],
@@ -44,6 +42,14 @@ export default defineComponent({
       default: false,
     },
     mimetype: {
+      type: String,
+      default: "",
+    },
+    size: {
+      type: Number,
+      default: 0,
+    },
+    date: {
       type: String,
       default: "",
     },
@@ -66,26 +72,24 @@ export default defineComponent({
       context.emit("rename", value.value);
     };
 
-    const mimetypeToImage: any = {
-      "image/png": IconImage,
-      "image/jpg": IconImage,
-      "image/jpeg": IconImage,
-      "image/bmp": IconImage,
-      "image/webp": IconImage,
-      "audio/mpeg": IconMp3,
-      "audio/aac": IconMp3,
-      "audio/weba": IconMp3,
-      "video/mpeg": IconVideo,
-      "video/webm": IconVideo,
-      "video/x-msvideo": IconVideo,
-      "application/pdf": IconPdf,
-    };
-    const mimetypeImage = mimetypeToImage[props.mimetype] || IconUnKnow;
+    const mimetypeImage = computed(() => {
+      return mimetypeToImage(props.mimetype);
+    });
 
+    const displayFileSize = computed(() => {
+      const size = props.size;
+      return converFileSize(size);
+    });
+
+    const fileDate = computed(() => {
+      return converFileDate(new Date(props.date).valueOf());
+    });
     return {
       value,
       mimetypeImage,
       pressEnter,
+      displayFileSize,
+      fileDate,
     };
   },
 });
@@ -109,10 +113,20 @@ export default defineComponent({
   }
   p {
     margin-bottom: 0;
+    flex: 1;
     &:hover {
       text-decoration: underline;
       user-select: none;
     }
+  }
+  .file-size,
+  .file-date {
+    color: #999;
+    font-size: 14px;
+    width: 100px;
+  }
+  .file-date {
+    width: 150px;
   }
 }
 </style>

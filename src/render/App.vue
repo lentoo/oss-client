@@ -25,6 +25,8 @@
         :is-dir="file.isDir"
         :editing="file.editing"
         :mimetype="file.mimetype"
+        :size="file.file_size"
+        :date="file.updatedAt"
         @click="handleClick(file)"
         @rename="handleFileRename"
         @cancel-rename="handleCancelRename"
@@ -86,7 +88,7 @@ import { notification } from "ant-design-vue";
 import { copyText } from "vue3-clipboard";
 
 import Nav from "./components/Nav.vue";
-import FileItem from "./components/FileItem.vue";
+import FileItem from "./components/FileItem/index.vue";
 import UploadQueue from "./components/UploadQueue.vue";
 
 import {

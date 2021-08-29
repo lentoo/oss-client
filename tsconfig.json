@@ -13,6 +13,9 @@
       "dom"
     ]
   },
+  "paths": {
+    "@": "./src"
+  },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",

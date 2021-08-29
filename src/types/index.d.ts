@@ -17,4 +17,7 @@ export interface IFile {
   editing?: boolean;
 
   file_size?: number;
+
+  updatedAt?: string;
+  createdAt?: string;
 }
