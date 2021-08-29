@@ -29,6 +29,9 @@ export function renameFile(
     parent_id,
   });
 }
+export function replaceFile(args: any): Promise<any> {
+  return request.post("/api/file/replaceFile", args);
+}
 
 const APPID = import.meta.env.VITE_APPID;
 const UPLOAD_API = `${import.meta.env.VITE_UPLOAD_BASEURL}${

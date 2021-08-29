@@ -46,6 +46,8 @@ import { handleUpload as requestUpload } from "../api";
 
 type FileStatus = "waiting" | "processing" | "success";
 interface IAddFileStatus {
+  _id?: string;
+  parent_id?: string;
   status: FileStatus;
   file: File;
   key: string;
@@ -90,6 +92,8 @@ export default defineComponent({
           ...result,
           filename,
           mimetype,
+          parent_id: file.parent_id,
+          _id: file._id,
         };
         console.log(file.file.name, " 上传完成");
         context.emit("success", emitArgs);

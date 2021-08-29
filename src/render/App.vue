@@ -75,17 +75,17 @@
 
 <script lang="ts">
 import {
-  computed,
   defineComponent,
   onMounted,
   ref,
   toRaw,
-  watch,
   reactive,
   watchEffect,
+  createVNode,
 } from "vue";
-import { notification } from "ant-design-vue";
+import { notification, Modal } from "ant-design-vue";
 import { copyText } from "vue3-clipboard";
+import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
 
 import Nav from "./components/Nav.vue";
 import FileItem from "./components/FileItem/index.vue";
@@ -97,11 +97,14 @@ import {
   deleteFile,
   renameFile,
   addFile,
+  replaceFile,
 } from "./api";
 import type { IFile } from "../types";
 
 type FileStatus = "waiting" | "processing" | "success";
 interface IAddFileStatus {
+  _id?: string;
+  parent_id?: string;
   status: FileStatus;
   file: File;
   key: string;
@@ -117,26 +120,56 @@ export default defineComponent({
   setup() {
     const filesQueue = ref<IAddFileStatus[]>([]);
     const isDragover = ref(false);
+
+    const appendFileToQueue = (filesArr: File[]) => {
+      const fileArray = filesArr.map((file) => {
+        const findFile = state.files.find((f) => f.filename === file.name);
+        if (findFile) {
+          return {
+            _id: findFile._id,
+            parent_id: parent_id.value,
+            status: "waiting",
+            key: Date.now() + (Math.random() * 100).toFixed(0),
+            file,
+          };
+        } else {
+          return {
+            file,
+            parent_id: parent_id.value,
+            status: "waiting",
+            key: Date.now() + (Math.random() * 100).toFixed(0),
+          };
+        }
+      }) as IAddFileStatus[];
+
+      filesQueue.value = [...fileArray, ...filesQueue.value];
+    };
+
     const onDrop = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
       isDragover.value = false;
-      const files = e.dataTransfer?.files || [];
-      if (files.length) {
-        const fileArray = Array.from(files).map((file) => {
-          return {
-            file,
-            status: "waiting",
-            key: Date.now() + (Math.random() * 100).toFixed(0),
-          };
-        }) as IAddFileStatus[];
-        console.log(fileArray);
-        console.log(filesQueue.value);
-
-        filesQueue.value = [...fileArray, ...filesQueue.value];
-
-        console.log(filesQueue.value);
+      const files = e.dataTransfer?.files;
+      if (files && files.length) {
+        const filesArr = Array.from(files);
+        const existFile = state.files.some((file) =>
+          filesArr.find((item) => item.name === file.filename)
+        );
+        if (existFile) {
+          Modal.confirm({
+            title: "文件替换提示",
+            icon: createVNode(ExclamationCircleOutlined),
+            content: "已存在同名文件、是否要替换？",
+            okText: "替换",
+            cancelText: "取消",
+            onOk: () => {
+              appendFileToQueue(filesArr);
+            },
+          });
+        } else {
+          appendFileToQueue(filesArr);
+        }
       }
     };
 
@@ -360,28 +393,53 @@ export default defineComponent({
         contextFile.editing = false;
       }
     };
-    const uploadSuccess = (result: {
-      downloadUrl: string;
-      fileKey: string;
-      fileSize: number;
-      filename: string;
-      mimetype: string;
-    }) => {
-      const { downloadUrl, fileKey, filename, mimetype, fileSize } = result;
-      addFile({
-        parent_id: parent_id.value,
+    const uploadSuccess = async (
+      result: {
+        downloadUrl: string;
+        fileKey: string;
+        fileSize: number;
+        filename: string;
+        mimetype: string;
+      } & IAddFileStatus
+    ) => {
+      const {
+        downloadUrl,
+        fileKey,
         filename,
         mimetype,
-        env: state.env,
-        cstore_url: downloadUrl,
-        file_key: fileKey,
-        file_size: fileSize,
-        isDir: false,
-      }).then((result) => {
-        if (result.code === 0) {
-          getFileListById();
-        }
-      });
+        fileSize,
+        parent_id,
+        _id,
+      } = result;
+      let p: Promise<any> = Promise.resolve();
+      if (result._id) {
+        p = replaceFile({
+          _id,
+          cstore_url: downloadUrl,
+          file_key: fileKey,
+          file_size: fileSize,
+          mimetype,
+        });
+      } else {
+        p = addFile({
+          parent_id: parent_id!,
+          filename,
+          mimetype,
+          env: state.env,
+          cstore_url: downloadUrl,
+          file_key: fileKey,
+          file_size: fileSize,
+          isDir: false,
+        });
+      }
+      const res = await p;
+      if (res.code === 0) {
+        getFileListById();
+      } else {
+        notification.error({
+          message: res.message,
+        });
+      }
     };
     return {
       modalImageUrl,
