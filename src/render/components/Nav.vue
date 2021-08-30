@@ -1,16 +1,16 @@
 <template>
   <div class="nav">
     <div class="nav-item" @click="$emit('onBack')">
-      <img src="../resources/images/icon-back.png" alt="" />
+      <img src="../resources/images/icon-back.svg" alt="" />
     </div>
     <div class="nav-item" @click="$emit('onHome')">
-      <img src="../resources/images/icon-home.png" alt="" />
+      <img src="../resources/images/icon-home.svg" alt="" />
     </div>
     <div class="nav-item" @click="$emit('onRefresh')">
-      <img src="../resources/images/icon-refresh.png" alt="" />
+      <img src="../resources/images/icon-refresh.svg" alt="" />
     </div>
     <div class="nav-item" @click="$emit('onAddFolder')">
-      <img src="../resources/images/icon-add.png" alt="" />
+      <img src="../resources/images/icon-add-folder.svg" alt="" />
     </div>
     <a-select
       v-model:value="envValue"
@@ -23,12 +23,6 @@
     </a-select>
     <a-space></a-space>
     <div class="nav-navigation">
-      <!-- <input
-        type="text"
-        placeholder="路径、默认为根目录"
-        disabled
-        :value="value"
-      /> -->
       <a-input
         disabled
         :maskClosable="false"
@@ -40,6 +34,9 @@
         }"
       />
     </div>
+    <div class="nav-item" @click="$emit('onAddFile')" style="margin-left: 10px">
+      <img src="../resources/images/icon-add.png" alt="" />
+    </div>
   </div>
 </template>
 <script lang="ts">
@@ -47,7 +44,14 @@ import { defineComponent, ref, watch } from "@vue/runtime-core";
 
 export default defineComponent({
   name: "nav",
-  emits: ["env-change", "onBack", "onHome", "onRefresh", "onAddFolder"],
+  emits: [
+    "env-change",
+    "onBack",
+    "onHome",
+    "onRefresh",
+    "onAddFolder",
+    "onAddFile",
+  ],
   props: {
     value: {
       type: String,

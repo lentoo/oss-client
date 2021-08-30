@@ -126,7 +126,7 @@ export default defineComponent({
     width: 100px;
   }
   .file-date {
-    width: 150px;
+    width: 160px;
   }
 }
 </style>

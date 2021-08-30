@@ -33,6 +33,25 @@ export function replaceFile(args: any): Promise<any> {
   return request.post("/api/file/replaceFile", args);
 }
 
+export function requestDownloadFile(file_url: string) {
+  return request
+    .get(file_url, {
+      responseType: "blob",
+    })
+    .then((res: any) => {
+      const blob = res as Blob;
+      const filename_index = file_url.lastIndexOf("/") + 1;
+      const filename =
+        file_url.substring(filename_index) + "." + blob.type.split("/")[1];
+      //blob转file
+      const file = new File([blob], filename, {
+        type: blob.type,
+        lastModified: Date.now(),
+      });
+      return file;
+    });
+}
+
 const APPID = import.meta.env.VITE_APPID;
 const UPLOAD_API = `${import.meta.env.VITE_UPLOAD_BASEURL}${
   import.meta.env.VITE_UPLOAD_API

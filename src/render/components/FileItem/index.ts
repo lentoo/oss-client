@@ -7,6 +7,7 @@ import IconUnKnow from "../../resources/images/icon-unknow.png";
 const mimetypeMap: {
   [key: string]: string;
 } = {
+  "image/gif": IconImage,
   "image/png": IconImage,
   "image/jpg": IconImage,
   "image/jpeg": IconImage,
@@ -17,6 +18,7 @@ const mimetypeMap: {
   "audio/weba": IconMp3,
   "video/mpeg": IconVideo,
   "video/webm": IconVideo,
+  "video/mp4": IconVideo,
   "video/x-msvideo": IconVideo,
   "application/pdf": IconPdf,
 };
@@ -64,9 +66,7 @@ export function converFileDate(ms: number): string {
   if (now - ms < 3 * dayMs) {
     return `前天 ${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
   }
-  return `${date.getFullYear()}年${
-    date.getMonth() + 1
-  }月${date.getDate()}日 ${padZero(date.getHours())}:${padZero(
-    date.getMinutes()
-  )}`;
+  return `${date.getFullYear()}年${padZero(date.getMonth() + 1)}月${padZero(
+    date.getDate()
+  )}日 ${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
 }

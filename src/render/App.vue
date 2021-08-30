@@ -15,6 +15,7 @@
       :env="state.env"
       @onRefresh="onRefresh"
       @onAddFolder="onAddFolder"
+      @onAddFile="onAddFile"
       @env-change="onEnvChange"
     />
     <div class="file-list" v-if="state.files.length">
@@ -56,8 +57,8 @@
 
     <context-menu v-model:show="menuShow" :options="menuOptions" />
 
-    <a-modal v-model:visible="modalVisible" width="80%">
-      <div style="text-align: center; margin-top: 20px">
+    <a-modal v-model:visible="modalVisible" width="80%" title="预览文件">
+      <div style="text-align: center">
         <img
           style="max-width: 100%; max-height: 50vh"
           :src="modalImageUrl"
@@ -68,8 +69,33 @@
         <a-button size="small" type="primary" @click="copyLink(modalImageUrl)"
           >复制链接</a-button
         >
+
+        <a-button
+          style="margin-left: 10px"
+          size="small"
+          type="primary"
+          @click="download(modalImageUrl)"
+          >下载文件</a-button
+        >
+        <a-button
+          style="float: right"
+          size="small"
+          type="danger"
+          @click="
+            () => {
+              reqeustDeleteFile(modalFileId);
+              modalVisible = false;
+            }
+          "
+          >删除文件</a-button
+        >
       </div>
     </a-modal>
+    <InputDialog
+      title="新增文件"
+      v-model:value="addFileDialogVisible"
+      @ok="onInputDialogOK"
+    />
   </main>
 </template>
 
@@ -86,11 +112,14 @@ import {
 import { notification, Modal } from "ant-design-vue";
 import { copyText } from "vue3-clipboard";
 import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
+// import { ipcRenderer } from "electron";
+
+const { ipcRenderer } = require("electron");
 
 import Nav from "./components/Nav.vue";
 import FileItem from "./components/FileItem/index.vue";
 import UploadQueue from "./components/UploadQueue.vue";
-
+import InputDialog from "./components/InputDialog/index.vue";
 import {
   getFileList,
   addDirectory,
@@ -98,6 +127,7 @@ import {
   renameFile,
   addFile,
   replaceFile,
+  requestDownloadFile,
 } from "./api";
 import type { IFile } from "../types";
 
@@ -116,6 +146,7 @@ export default defineComponent({
     NavComponent: Nav,
     FileItem,
     UploadQueue,
+    InputDialog,
   },
   setup() {
     const filesQueue = ref<IAddFileStatus[]>([]);
@@ -220,6 +251,7 @@ export default defineComponent({
     const dirPath = ref("");
     const modalVisible = ref(false);
     const modalImageUrl = ref("");
+    const modalFileId = ref("");
     const handleClick = (file: IFile) => {
       file = toRaw(file);
       console.log(file);
@@ -230,6 +262,7 @@ export default defineComponent({
         parent_id.value = file._id!;
         getFileListById();
       } else {
+        modalFileId.value = file._id;
         modalVisible.value = true;
         modalImageUrl.value = file.cstore_url;
       }
@@ -247,6 +280,9 @@ export default defineComponent({
           });
         }
       });
+    };
+    const download = (url: string) => {
+      ipcRenderer.send("download-file", url);
     };
 
     watchEffect(() => {
@@ -316,6 +352,18 @@ export default defineComponent({
     };
     const onAddFolder = () => {
       visible.value = true;
+    };
+
+    const addFileDialogVisible = ref(false);
+    const onAddFile = () => {
+      addFileDialogVisible.value = true;
+    };
+    const onInputDialogOK = (url: string) => {
+      requestDownloadFile(url).then((f: File) => {
+        console.log(f);
+        appendFileToQueue([f]);
+        addFileDialogVisible.value = false;
+      });
     };
 
     const reqeustDeleteFile = async (_id: string) => {
@@ -444,16 +492,21 @@ export default defineComponent({
     return {
       modalImageUrl,
       modalVisible,
+      modalFileId,
       onDrop,
       onDragOver,
       onDragLeave,
       handleClick,
       copyLink,
+      download,
       onBack,
       onHome,
       onRefresh,
       onAddFolder,
       onEnvChange,
+      onAddFile,
+      addFileDialogVisible,
+      onInputDialogOK,
       state,
       dirPath,
       isDragover,
@@ -468,6 +521,7 @@ export default defineComponent({
       onContextMenu,
       menuOptions,
       menuShow,
+      reqeustDeleteFile,
       handleFileRename,
       handleCancelRename,
       uploadSuccess,
@@ -492,7 +546,7 @@ img {
   min-height: 100vh;
 }
 .file-list {
-  padding-top: 40px;
+  padding-top: 34px;
 }
 .is-dragover {
   background-color: rgba(32, 159, 255, 0.1);
