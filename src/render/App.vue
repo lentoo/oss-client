@@ -57,16 +57,19 @@
 
     <context-menu v-model:show="menuShow" :options="menuOptions" />
 
-    <a-modal v-model:visible="modalVisible" width="80%" title="预览文件">
+    <a-modal v-model:visible="modalState.visible" width="80%" title="预览文件">
       <div style="text-align: center">
         <img
           style="max-width: 100%; max-height: 50vh"
-          :src="modalImageUrl"
+          :src="modalState.imageUrl"
           alt=""
         />
       </div>
       <div style="margin-top: 20px">
-        <a-button size="small" type="primary" @click="copyLink(modalImageUrl)"
+        <a-button
+          size="small"
+          type="primary"
+          @click="copyLink(modalState.imageUrl)"
           >复制链接</a-button
         >
 
@@ -74,8 +77,15 @@
           style="margin-left: 10px"
           size="small"
           type="primary"
-          @click="download(modalImageUrl)"
+          @click="download(modalState.imageUrl)"
           >下载文件</a-button
+        >
+        <a-button
+          style="margin-left: 10px"
+          size="small"
+          type="primary"
+          @click="compression(modalState.fileKey)"
+          >图片压缩</a-button
         >
         <a-button
           style="float: right"
@@ -83,8 +93,8 @@
           type="danger"
           @click="
             () => {
-              reqeustDeleteFile(modalFileId);
-              modalVisible = false;
+              reqeustDeleteFile(modalState.fileId);
+              modalState.visible = false;
             }
           "
           >删除文件</a-button
@@ -108,6 +118,7 @@ import {
   reactive,
   watchEffect,
   createVNode,
+  computed,
 } from "vue";
 import { notification, Modal } from "ant-design-vue";
 import { copyText } from "vue3-clipboard";
@@ -128,6 +139,7 @@ import {
   addFile,
   replaceFile,
   requestDownloadFile,
+  compressionFile,
 } from "./api";
 import type { IFile } from "../types";
 
@@ -221,7 +233,6 @@ export default defineComponent({
 
     const parent_id = ref("");
     const queue_parent_ids = ref<string[]>([]);
-    // const env = ref(localStorage.getItem("env") || "test");
 
     const getFileListById = async () => {
       const result = await getFileList({
@@ -249,9 +260,13 @@ export default defineComponent({
     });
 
     const dirPath = ref("");
-    const modalVisible = ref(false);
-    const modalImageUrl = ref("");
-    const modalFileId = ref("");
+    const modalState = reactive({
+      visible: false,
+      imageUrl: "",
+      fileId: "",
+      fileKey: "",
+    });
+
     const handleClick = (file: IFile) => {
       file = toRaw(file);
       console.log(file);
@@ -262,9 +277,10 @@ export default defineComponent({
         parent_id.value = file._id!;
         getFileListById();
       } else {
-        modalFileId.value = file._id;
-        modalVisible.value = true;
-        modalImageUrl.value = file.cstore_url;
+        modalState.visible = true;
+        modalState.fileId = file._id || "";
+        modalState.imageUrl = file.cstore_url;
+        modalState.fileKey = file.file_key;
       }
     };
 
@@ -366,6 +382,12 @@ export default defineComponent({
       });
     };
 
+    const compression = (fileKey: string) => {
+      compressionFile(fileKey).then((res: any) => {
+        console.log(res);
+      });
+    };
+
     const reqeustDeleteFile = async (_id: string) => {
       const response = await deleteFile({
         _id,
@@ -388,34 +410,35 @@ export default defineComponent({
       contextFile = file;
     };
 
-    const menuOptions = ref({
-      items: [
-        {
-          label: "删除",
-          onClick: () => {
-            if (contextFile) {
-              reqeustDeleteFile(contextFile._id!);
-            }
+    const menuOptions = computed(() => {
+      return {
+        items: [
+          {
+            label: "删除",
+            onClick: () => {
+              if (contextFile) {
+                reqeustDeleteFile(contextFile._id!);
+              }
+            },
           },
-        },
-        // { label: "Paste", disabled: true },
-        {
-          label: "重命名",
-          onClick: () => {
-            state.files.forEach((item) => {
-              item.editing = false;
-            });
-            if (contextFile) {
-              contextFile.editing = true;
-            }
+          {
+            label: "重命名",
+            onClick: () => {
+              state.files.forEach((item) => {
+                item.editing = false;
+              });
+              if (contextFile) {
+                contextFile.editing = true;
+              }
+            },
           },
-        },
-      ],
-      iconFontClass: "iconfont",
-      customClass: "class-a",
-      minWidth: 120,
-      x: 0,
-      y: 0,
+        ],
+        iconFontClass: "iconfont",
+        customClass: "class-a",
+        minWidth: 120,
+        x: 0,
+        y: 0,
+      };
     });
     const menuShow = ref(false);
     const handleFileRename = async (newFileName: string) => {
@@ -490,9 +513,7 @@ export default defineComponent({
       }
     };
     return {
-      modalImageUrl,
-      modalVisible,
-      modalFileId,
+      modalState,
       onDrop,
       onDragOver,
       onDragLeave,
@@ -522,6 +543,7 @@ export default defineComponent({
       menuOptions,
       menuShow,
       reqeustDeleteFile,
+      compression,
       handleFileRename,
       handleCancelRename,
       uploadSuccess,

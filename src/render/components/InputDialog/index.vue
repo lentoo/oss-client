@@ -6,7 +6,7 @@
     @ok="onOk"
     @cancel="onCancel"
   >
-    <a-input placeholder="请输入图片链接" v-model:value="inputValue" />
+    <a-input placeholder="请输入文件链接" v-model:value="inputValue" />
   </a-modal>
 </template>
 <script lang="ts">

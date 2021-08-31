@@ -87,3 +87,15 @@ export async function handleUpload(file: File) {
   console.log(result);
   return result.data;
 }
+
+const compressionFileAPI = `${import.meta.env.VITE_UPLOAD_BASEURL}${
+  import.meta.env.VITE_COMPRESSION_API
+}`;
+export async function compressionFile(fileKey: string): Promise<any> {
+  const data = {
+    appId: APPID,
+    fileKey,
+    compressPercent: 7,
+  };
+  return request.post(compressionFileAPI, data);
+}
