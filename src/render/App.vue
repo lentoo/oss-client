@@ -106,6 +106,12 @@
       v-model:value="addFileDialogVisible"
       @ok="onInputDialogOK"
     />
+
+    <FullModel
+      :src="modalState.imageUrl"
+      v-model:visible="state.fullModelVisible"
+    >
+    </FullModel>
   </main>
 </template>
 
@@ -131,6 +137,7 @@ import Nav from "./components/Nav.vue";
 import FileItem from "./components/FileItem/index.vue";
 import UploadQueue from "./components/UploadQueue.vue";
 import InputDialog from "./components/InputDialog/index.vue";
+import FullModel from "./components/FullModel/index.vue";
 import {
   getFileList,
   addDirectory,
@@ -159,6 +166,7 @@ export default defineComponent({
     FileItem,
     UploadQueue,
     InputDialog,
+    FullModel,
   },
   setup() {
     const filesQueue = ref<IAddFileStatus[]>([]);
@@ -253,10 +261,12 @@ export default defineComponent({
       queue: IFile[];
       env: string;
       files: IFile[];
+      fullModelVisible: boolean;
     }>({
       queue: [],
       env: localStorage.getItem("env") || "test",
       files: [],
+      fullModelVisible: false,
     });
 
     const dirPath = ref("");
@@ -383,9 +393,10 @@ export default defineComponent({
     };
 
     const compression = (fileKey: string) => {
-      compressionFile(fileKey).then((res: any) => {
-        console.log(res);
-      });
+      // compressionFile(fileKey).then((res: any) => {
+      //   console.log(res);
+      // });
+      state.fullModelVisible = true;
     };
 
     const reqeustDeleteFile = async (_id: string) => {
@@ -552,7 +563,7 @@ export default defineComponent({
 });
 </script>
 
-<style>
+<style lang="scss">
 * {
   padding: 0;
   margin: 0;
