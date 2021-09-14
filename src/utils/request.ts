@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const request = axios.create({
-  baseURL: "https://marketing.gymgest.com.cn/oss/", //"http://localhost:8080",
+  baseURL: import.meta.env.VITE_BASEURL as string, //"http://localhost:8080",
   // baseURL: "http://localhost:8080",
 });
 
