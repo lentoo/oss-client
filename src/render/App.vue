@@ -201,6 +201,13 @@ export default defineComponent({
       e.stopPropagation();
 
       isDragover.value = false;
+      if (!state.env) {
+        notification.error({
+          message: "请选择项目",
+        });
+        return;
+      }
+
       const files = e.dataTransfer?.files;
       if (files && files.length) {
         const filesArr = Array.from(files);
@@ -245,7 +252,6 @@ export default defineComponent({
     const getFileListById = async () => {
       const result = await getFileList({
         parent_id: parent_id.value,
-        env: state.env,
       });
 
       fileDatas = result.data;
@@ -264,7 +270,7 @@ export default defineComponent({
       fullModelVisible: boolean;
     }>({
       queue: [],
-      env: localStorage.getItem("env") || "test",
+      env: localStorage.getItem("bucket") || "",
       files: [],
       fullModelVisible: false,
     });
@@ -360,7 +366,6 @@ export default defineComponent({
         confirmLoading.value = true;
         const result = await addDirectory({
           filename: folderValue.value,
-          env: state.env,
           parent_id: parent_id.value,
         });
         confirmLoading.value = false;
@@ -507,7 +512,6 @@ export default defineComponent({
           parent_id: parent_id!,
           filename,
           mimetype,
-          env: state.env,
           cstore_url: downloadUrl,
           file_key: fileKey,
           file_size: fileSize,

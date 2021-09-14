@@ -15,11 +15,11 @@
     <a-select
       v-model:value="envValue"
       size="small"
-      :style="{ height: '26px', marginRight: '16px', width: '80px' }"
+      :style="{ height: '26px', marginRight: '16px', width: '100px' }"
       @change="handleChange"
     >
-      <a-select-option value="test">内网</a-select-option>
-      <a-select-option value="prod">正式</a-select-option>
+      <a-select-option value="gymgest">官网</a-select-option>
+      <a-select-option value="qishen_h5">起身H5</a-select-option>
     </a-select>
     <a-space></a-space>
     <div class="nav-navigation">
@@ -65,7 +65,7 @@ export default defineComponent({
   setup(props, context) {
     const envValue = ref(props.env);
     const handleChange = (value: string) => {
-      localStorage.setItem("env", value);
+      localStorage.setItem("bucket", value);
       context.emit("env-change", value);
     };
     watch([props.env], () => {
