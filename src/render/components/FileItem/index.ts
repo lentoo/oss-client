@@ -1,31 +1,3 @@
-import IconImage from "../../resources/images/icon-image.png";
-import IconMp3 from "../../resources/images/icon-mp3.png";
-import IconVideo from "../../resources/images/icon-video.png";
-import IconPdf from "../../resources/images/icon-pdf.png";
-import IconUnKnow from "../../resources/images/icon-unknow.png";
-
-const mimetypeMap: {
-  [key: string]: string;
-} = {
-  "image/gif": IconImage,
-  "image/png": IconImage,
-  "image/jpg": IconImage,
-  "image/jpeg": IconImage,
-  "image/bmp": IconImage,
-  "image/webp": IconImage,
-  "audio/mpeg": IconMp3,
-  "audio/aac": IconMp3,
-  "audio/weba": IconMp3,
-  "video/mpeg": IconVideo,
-  "video/webm": IconVideo,
-  "video/mp4": IconVideo,
-  "video/x-msvideo": IconVideo,
-  "application/pdf": IconPdf,
-};
-export function mimetypeToImage(mimetype: string): string {
-  return mimetypeMap[mimetype] || IconUnKnow;
-}
-
 export function converFileSize(size: number): string {
   if (!size) {
     return "未知";

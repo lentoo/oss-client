@@ -20,6 +20,7 @@
     >
       <a-select-option value="gymgest">官网</a-select-option>
       <a-select-option value="qishen_h5">起身H5</a-select-option>
+      <a-select-option value="email">邮件</a-select-option>
     </a-select>
     <a-space></a-space>
     <div class="nav-navigation">

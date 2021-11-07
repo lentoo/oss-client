@@ -3,7 +3,7 @@
     v-model:visible="show"
     destroyOnClose
     title="图片压缩"
-    @ok="handleOk"
+    @ok="onCancel"
     @cancel="onCancel"
     width="100%"
     wrapClassName="full-modal"

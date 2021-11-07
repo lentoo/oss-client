@@ -1,9 +1,12 @@
 // import { app, BrowserWindow } from 'electron'
 const { app, BrowserWindow, ipcMain, session, dialog } = require("electron");
 
-const IS_PROD = process.env.NODE_ENV === "production";
+const mode = (process.env.MODE = process.env.MODE || "production");
+
+const IS_PROD = app.isPackaged;
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 console.log("NODE_ENV", process.env.NODE_ENV);
+
 let win;
 
 let saveFilePath = "";

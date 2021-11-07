@@ -28,6 +28,7 @@
         :mimetype="file.mimetype"
         :size="file.file_size"
         :date="file.updatedAt"
+        :url="file.cstore_url"
         @click="handleClick(file)"
         @rename="handleFileRename"
         @cancel-rename="handleCancelRename"
@@ -57,13 +58,62 @@
 
     <context-menu v-model:show="menuShow" :options="menuOptions" />
 
-    <a-modal v-model:visible="modalState.visible" width="80%" title="预览文件">
+    <a-modal
+      v-model:visible="modalState.visible"
+      width="80%"
+      :title="`预览文件 ${modalState.filename}`"
+      cancelText="取消"
+      okText="关闭"
+      style="top: 20px"
+      @ok="
+        () => {
+          modalState.visible = false;
+        }
+      "
+      @cancel="
+        () => {
+          modalState.visible = false;
+        }
+      "
+    >
       <div style="text-align: center">
-        <img
+        <van-image
+          v-if="mimetypeIsImage(modalState.mimetype)"
+          fit="contain"
+          :src="modalState.imageUrl"
+          class="file-icon"
+          style="max-width: 100%; height: 55vh"
+          @click="previewImage"
+        >
+          <template v-slot:loading>
+            <van-loading type="spinner" size="20" />
+          </template>
+        </van-image>
+        <video
+          v-else-if="mimetypeIsVideo(modalState.mimetype)"
+          :src="modalState.imageUrl"
+          style="max-width: 100%"
+          controls
+        ></video>
+        <audio
+          v-else-if="mimetypeIsAudio(modalState.mimetype)"
+          :src="modalState.imageUrl"
+          style="max-width: 100%"
+          controls
+        ></audio>
+        <van-image
+          v-else
+          fit="contain"
+          :src="mimetypeImage(modalState.mimetype)"
+          class="file-icon"
+          style="max-width: 100%; height: 40vh"
+        >
+        </van-image>
+        <!-- <img
           style="max-width: 100%; max-height: 50vh"
           :src="modalState.imageUrl"
           alt=""
-        />
+        /> -->
       </div>
       <div style="margin-top: 20px">
         <a-button
@@ -81,6 +131,7 @@
           >下载文件</a-button
         >
         <a-button
+          v-if="mimetypeIsImage(modalState.mimetype)"
           style="margin-left: 10px"
           size="small"
           type="primary"
@@ -128,7 +179,15 @@ import {
 } from "vue";
 import { notification, Modal } from "ant-design-vue";
 import { copyText } from "vue3-clipboard";
+import { Image, Loading, ImagePreview } from "vant";
+
 import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
+import {
+  mimetypeIsImage,
+  mimetypeToImage,
+  mimetypeIsVideo,
+  mimetypeIsAudio,
+} from "../utils";
 // import { ipcRenderer } from "electron";
 
 const { ipcRenderer } = require("electron");
@@ -146,7 +205,6 @@ import {
   addFile,
   replaceFile,
   requestDownloadFile,
-  compressionFile,
 } from "./api";
 import type { IFile } from "../types";
 
@@ -167,6 +225,9 @@ export default defineComponent({
     UploadQueue,
     InputDialog,
     FullModel,
+    [Image.name]: Image,
+    [Loading.name]: Loading,
+    [ImagePreview.Component.name]: ImagePreview.Component,
   },
   setup() {
     const filesQueue = ref<IAddFileStatus[]>([]);
@@ -214,6 +275,8 @@ export default defineComponent({
         const existFile = state.files.some((file) =>
           filesArr.find((item) => item.name === file.filename)
         );
+        console.log(files);
+
         if (existFile) {
           Modal.confirm({
             title: "文件替换提示",
@@ -281,6 +344,8 @@ export default defineComponent({
       imageUrl: "",
       fileId: "",
       fileKey: "",
+      filename: "",
+      mimetype: "",
     });
 
     const handleClick = (file: IFile) => {
@@ -297,6 +362,8 @@ export default defineComponent({
         modalState.fileId = file._id || "";
         modalState.imageUrl = file.cstore_url;
         modalState.fileKey = file.file_key;
+        modalState.filename = file.filename;
+        modalState.mimetype = file.mimetype;
       }
     };
 
@@ -315,6 +382,16 @@ export default defineComponent({
     };
     const download = (url: string) => {
       ipcRenderer.send("download-file", url);
+    };
+
+    const previewImage = () => {
+      ImagePreview({
+        images: [modalState.imageUrl],
+        closeable: true,
+        teleport: "body",
+        showIndex: false,
+        showIndicators: false,
+      });
     };
 
     watchEffect(() => {
@@ -527,6 +604,10 @@ export default defineComponent({
         });
       }
     };
+
+    const mimetypeImage = (mimetype: string) => {
+      return mimetypeToImage(mimetype);
+    };
     return {
       modalState,
       onDrop,
@@ -562,6 +643,12 @@ export default defineComponent({
       handleFileRename,
       handleCancelRename,
       uploadSuccess,
+      previewImage,
+
+      mimetypeIsImage,
+      mimetypeImage,
+      mimetypeIsVideo,
+      mimetypeIsAudio,
     };
   },
 });

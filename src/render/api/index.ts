@@ -62,7 +62,7 @@ export async function handleUpload(file: File) {
     appId: APPID,
     clientIp: "127.0.0.1",
     requestId: "",
-    clientId: "",
+    keySuffix: ".png",
   };
   const token = await request.get(UPLOAD_API, {
     params: data,

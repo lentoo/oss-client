@@ -5,7 +5,19 @@
       v-if="isDir"
       src="../../resources/images/icon-folder.png"
     />
-    <img class="file-icon" v-else :src="mimetypeImage" />
+    <van-image
+      v-else
+      fit="contain"
+      width="24px"
+      height="24px"
+      :src="mimetypeImage"
+      class="file-icon"
+    >
+      <template v-slot:loading>
+        <van-loading type="spinner" size="20" />
+      </template>
+    </van-image>
+    <!-- <img class="file-icon" v-else :src="mimetypeImage" /> -->
 
     <p v-if="editing" @click.stop="() => {}">
       <a-input
@@ -16,20 +28,30 @@
         @blur="pressEnter"
       />
     </p>
-    <p v-else>{{ filename }}</p>
+    <p v-else ref="filenameRef" :title="filename">{{ filename }}</p>
 
     <span class="file-size">{{ isDir ? "--" : displayFileSize }}</span>
     <span class="file-date">{{ fileDate }}</span>
   </div>
 </template>
 <script lang="ts">
-import { computed, defineComponent, ref } from "vue";
-import { mimetypeToImage, converFileDate, converFileSize } from "./index";
+import { computed, defineComponent, onMounted, ref } from "vue";
+import { Image, Loading } from "vant";
+import { mimetypeToImage } from "../../../utils";
+import { converFileDate, converFileSize } from "./index";
 export default defineComponent({
   name: "file-item",
   emits: ["click", "rename", "cancelRename"],
+  components: {
+    [Image.name]: Image,
+    [Loading.name]: Loading,
+  },
   props: {
     filename: {
+      type: String,
+      required: true,
+    },
+    url: {
       type: String,
       required: true,
     },
@@ -73,6 +95,13 @@ export default defineComponent({
     };
 
     const mimetypeImage = computed(() => {
+      console.log({
+        mimetype: props.mimetype,
+      });
+      if (props.mimetype.startsWith("image")) {
+        return `${props.url}?x-oss-process=image/format,jpg/quality,q_10`;
+      }
+
       return mimetypeToImage(props.mimetype);
     });
 
@@ -84,12 +113,23 @@ export default defineComponent({
     const fileDate = computed(() => {
       return converFileDate(new Date(props.date).valueOf());
     });
+
+    const filenameRef = ref<HTMLElement>();
+    // onMounted(() => {
+    //   console.log(props.filename);
+    //   console.log(window.getComputedStyle(filenameRef.value!).width);
+    //   console.log(
+    //     window.getComputedStyle(filenameRef.value!.parentElement!).width
+    //   );
+    //   // console.log(filenameRef.value);
+    // });
     return {
       value,
       mimetypeImage,
       pressEnter,
       displayFileSize,
       fileDate,
+      filenameRef,
     };
   },
 });
@@ -114,6 +154,10 @@ export default defineComponent({
   p {
     margin-bottom: 0;
     flex: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding-right: 20px;
     &:hover {
       text-decoration: underline;
       user-select: none;
