@@ -65,16 +65,8 @@
       cancelText="取消"
       okText="关闭"
       style="top: 20px"
-      @ok="
-        () => {
-          modalState.visible = false;
-        }
-      "
-      @cancel="
-        () => {
-          modalState.visible = false;
-        }
-      "
+      @ok="handlePreviewClose"
+      @cancel="handlePreviewClose"
     >
       <div style="text-align: center">
         <van-image
@@ -82,7 +74,7 @@
           fit="contain"
           :src="modalState.imageUrl"
           class="file-icon"
-          style="max-width: 100%; height: 55vh"
+          style="max-width: 100%; height: 55vh; cursor: pointer"
           @click="previewImage"
         >
           <template v-slot:loading>
@@ -92,7 +84,7 @@
         <video
           v-else-if="mimetypeIsVideo(modalState.mimetype)"
           :src="modalState.imageUrl"
-          style="max-width: 100%"
+          style="max-width: 100%; max-height: 60vh"
           controls
         ></video>
         <audio
@@ -189,7 +181,7 @@ import {
   mimetypeIsAudio,
 } from "../utils";
 // import { ipcRenderer } from "electron";
-
+const require = window.require || (() => ({ ipcRenderer: {} }));
 const { ipcRenderer } = require("electron");
 
 import Nav from "./components/Nav.vue";
@@ -604,7 +596,15 @@ export default defineComponent({
         });
       }
     };
-
+    const handlePreviewClose = () => {
+      modalState.visible = false;
+      setTimeout(() => {
+        modalState.imageUrl = "";
+        modalState.fileKey = "";
+        modalState.fileId = "";
+        modalState.mimetype = "";
+      }, 300);
+    };
     const mimetypeImage = (mimetype: string) => {
       return mimetypeToImage(mimetype);
     };
@@ -644,6 +644,7 @@ export default defineComponent({
       handleCancelRename,
       uploadSuccess,
       previewImage,
+      handlePreviewClose,
 
       mimetypeIsImage,
       mimetypeImage,

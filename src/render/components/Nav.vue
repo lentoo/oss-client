@@ -91,6 +91,7 @@ export default defineComponent({
   left: 0;
   right: 0;
   user-select: none;
+  z-index: 11;
   &-item {
     background-color: #fff;
     border-radius: 2px;
